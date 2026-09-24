@@ -2,4 +2,7 @@ Flask
 scikit-learn
 numpy
 joblib
+opencv-python-headless
+albumentations
 gunicorn
+werkzeug
