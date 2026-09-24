@@ -1,88 +1,77 @@
-import os
-import cv2
-import numpy as np
-import joblib
-import albumentations as A
-from flask import Flask, render_template, request, redirect
-from werkzeug.utils import secure_filename
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anemia Detection Model</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+        }
+        /* Custom file input styling */
+        input[type="file"]::file-selector-button {
+            display: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
 
-# Initialize Flask app
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Max 16MB upload size
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div class="text-center mb-8">
+            <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">Anemia Detection</h2>
+            <p class="text-sm text-gray-500 mt-2">Upload a medical image for SVM classification.</p>
+        </div>
 
-# Ensure the uploads folder exists within the static directory
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
-
-# Data Augmentation function
-def augment_image(img):
-    transform = A.Compose([
-        A.RandomBrightnessContrast(p=0.3),
-        A.Rotate(limit=30, p=0.5),
-        A.HorizontalFlip(p=0.5),
-        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=15, p=0.5)
-    ])
-    return transform(image=img)['image']
-
-# Feature Extraction function
-def extract_features(img_path):
-    img = cv2.imread(img_path)
-    if img is None:
-        raise ValueError("Unable to read image. Check the file format.")
-    
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = cv2.resize(img, (50, 50))
-    img = augment_image(img)
-    
-    # 3D color histogram (8x8x8 = 512 features)
-    features = cv2.calcHist([img], [0, 1, 2], None, [8, 8, 8],
-                            [0, 256, 0, 256, 0, 256])
-    return features.flatten().reshape(1, -1)
-
-# Load the trained SVM model
-MODEL_PATH = "anemia_svm_model.pkl"
-try:
-    model = joblib.load(MODEL_PATH)
-except FileNotFoundError:
-    model = None
-
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-@app.route('/predict', methods=['POST'])
-def predict():
-    if model is None:
-        return render_template('index.html', error="Model file 'anemia_svm_model.pkl' not found.")
-        
-    if 'file' not in request.files:
-        return redirect(request.url)
-    
-    file = request.files['file']
-    if file.filename == '':
-        return redirect(request.url)
-    
-    if file:
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        
-        try:
-            # Extract features and predict
-            features = extract_features(file_path)
-            prediction_val = model.predict(features)[0]
+        <form action="{{ url_for('predict') }}" method="post" enctype="multipart/form-data" class="space-y-6">
             
-            result_text = "Anemic" if prediction_val == 1 else "Non-Anemic"
+            <!-- File Upload Zone -->
+            <label class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-200 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg class="w-8 h-8 mb-3 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                    </svg>
+                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                    <p class="text-xs text-gray-400">JPEG, PNG, or JPG (Max 16MB)</p>
+                </div>
+                <input type="file" name="file" class="hidden" accept="image/*" required onchange="document.getElementById('filename').textContent = this.files[0].name" />
+            </label>
+            <div id="filename" class="text-center text-xs text-gray-600 font-medium h-4"></div>
+
+            <button type="submit" 
+                class="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 rounded-xl transition-colors duration-200 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 shadow-sm">
+                Analyze Image
+            </button>
+        </form>
+
+        <!-- Prediction Result -->
+        {% if prediction %}
+        <div class="mt-8 pt-6 border-t border-gray-100">
+            <h3 class="text-sm font-medium text-gray-500 text-center uppercase tracking-wide mb-4">Analysis Result</h3>
             
-            # Use forward slashes for web URL paths
-            img_url = f"/static/uploads/{filename}"
+            {% if img_url %}
+            <div class="flex justify-center mb-4">
+                <img src="{{ img_url }}" alt="Uploaded Image" class="w-24 h-24 object-cover rounded-lg border border-gray-200 shadow-sm">
+            </div>
+            {% endif %}
 
-            return render_template('index.html', prediction=result_text, img_url=img_url)
-        except Exception as e:
-            return render_template('index.html', error=str(e))
+            <div class="p-4 rounded-xl border text-center font-semibold 
+                {% if prediction == 'Anemic' %} bg-red-50 border-red-100 text-red-700 
+                {% else %} bg-green-50 border-green-100 text-green-700 {% endif %}">
+                {{ prediction }}
+            </div>
+        </div>
+        {% endif %}
 
-if __name__ == "__main__":
-    # Render assigns the PORT environment variable dynamically
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+        <!-- Error Handling -->
+        {% if error %}
+        <div class="mt-6 p-4 bg-red-50 rounded-xl border border-red-100 text-center">
+            <span class="text-red-700 font-medium text-sm">{{ error }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>
