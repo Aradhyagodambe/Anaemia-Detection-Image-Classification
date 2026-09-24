@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Inference</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div class="text-center mb-8">
+            <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">Predictive Model</h2>
+            <p class="text-sm text-gray-500 mt-2">Enter feature values to generate a prediction.</p>
+        </div>
+
+        <form action="{{ url_for('predict') }}" method="post" class="space-y-5">
+            <!-- Feature 1 -->
+            <div>
+                <label for="feature1" class="block text-sm font-medium text-gray-700 mb-1">Feature 1</label>
+                <input type="text" name="feature1" id="feature1" required 
+                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 text-sm">
+            </div>
+
+            <!-- Feature 2 -->
+            <div>
+                <label for="feature2" class="block text-sm font-medium text-gray-700 mb-1">Feature 2</label>
+                <input type="text" name="feature2" id="feature2" required 
+                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 text-sm">
+            </div>
+
+            <!-- Feature 3 -->
+            <div>
+                <label for="feature3" class="block text-sm font-medium text-gray-700 mb-1">Feature 3</label>
+                <input type="text" name="feature3" id="feature3" required 
+                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 text-sm">
+            </div>
+
+            <!-- Feature 4 -->
+            <div>
+                <label for="feature4" class="block text-sm font-medium text-gray-700 mb-1">Feature 4</label>
+                <input type="text" name="feature4" id="feature4" required 
+                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 text-sm">
+            </div>
+
+            <button type="submit" 
+                class="w-full mt-6 bg-gray-900 hover:bg-gray-800 text-white font-medium py-2.5 rounded-lg transition-colors duration-200 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-gray-900">
+                Run Inference
+            </button>
+        </form>
+
+        <!-- Result Section -->
+        {% if prediction_text %}
+        <div class="mt-8 p-4 bg-green-50 rounded-lg border border-green-100 text-center">
+            <span class="text-green-800 font-medium text-sm">{{ prediction_text }}</span>
+        </div>
+        {% endif %}
+
+        {% if error_text %}
+        <div class="mt-8 p-4 bg-red-50 rounded-lg border border-red-100 text-center">
+            <span class="text-red-800 font-medium text-sm">{{ error_text }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>
